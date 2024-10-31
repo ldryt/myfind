@@ -12,15 +12,26 @@ struct queue *lex(char **arg)
     int i = 0;
     while (arg[i])
     {
-        struct ast *ast = ast_init(arg[i]);
-        if (!ast)
+        struct ast *elm = ast_init(arg[i]);
+        if (!elm)
         {
-            warnx("lex: Unable to initialize ast");
+            warnx("lex: Unable to initialize elm");
             return NULL;
         }
 
-        queue_push(q, ast);
+        if (is_test(elm))
+        {
+            if (!arg[i + 1])
+            {
+                warnx("lex: No value after test argument");
+                return NULL;
+            }
 
+            elm->data.value = arg[i + 1];
+            i++;
+        }
+
+        queue_push(q, elm);
         i++;
     }
 

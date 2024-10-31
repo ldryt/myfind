@@ -177,5 +177,6 @@ static const char *get_name(const char *path)
 
 int eval_name(const char *path, const struct ast *ast)
 {
-    return fnmatch(get_name(path), ast->data.value, 0) == 0;
+    int res = fnmatch(ast->data.value, get_name(path), 0) == 0;
+    return res;
 }
