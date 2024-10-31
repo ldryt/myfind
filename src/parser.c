@@ -26,7 +26,7 @@ static int merge(struct ast *op, struct stack **cmd_stack)
 }
 
 static void *abort_parsing(struct ast *elm, struct stack **cmd_stack,
-                    struct stack **op_stack, char *msg)
+                           struct stack **op_stack, char *msg)
 {
     warn("abort_parsing: %s", msg);
     ast_destroy(elm);

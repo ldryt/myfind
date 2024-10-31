@@ -3,7 +3,7 @@
 #include <err.h>
 #include <stddef.h>
 
-#include "ast.h"
+#include "ast_eval.h"
 
 struct queue *lex(char **arg)
 {

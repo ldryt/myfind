@@ -35,11 +35,20 @@ struct ast
     } data;
 };
 
-struct alist
+struct assoc
 {
     char *name;
     enum type type;
+    int (*fun)(const char *path, const struct ast *ast);
 };
+
+int lsdir(const char *path, const struct ast *ast);
+
+int eval(const char *path, const struct ast *ast);
+int eval_or(const char *path, const struct ast *ast);
+int eval_and(const char *path, const struct ast *ast);
+int eval_print(const char *path, const struct ast *ast);
+int eval_name(const char *path, const struct ast *ast);
 
 struct ast *ast_init(const char *name);
 void ast_destroy(struct ast *ast);
