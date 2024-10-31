@@ -131,10 +131,7 @@ int lsdir(const char *path, const struct ast *ast)
 int eval(const char *path, const struct ast *ast)
 {
     if (!ast)
-    {
-        warnx("eval: ast is empty");
-        return 0;
-    }
+        return 1;
 
     for (size_t i = 0; i < sizeof(alist) / sizeof(alist[0]); ++i)
         if (ast->type == alist[i].type)

@@ -42,6 +42,9 @@ struct ast *parse(struct queue *queue)
     struct stack *op_stack = NULL;
     struct stack *cmd_stack = NULL;
 
+    if (!queue_seek(queue))
+        return ast_init("-print");
+
     while ((elm = queue_pop(queue)))
     {
         if (!is_operator(elm))
@@ -49,15 +52,7 @@ struct ast *parse(struct queue *queue)
             cmd_stack = stack_push(cmd_stack, elm);
 
             if (was_cmd)
-            {
-                struct ast *and_op = ast_init("-a");
-                if (!and_op)
-                    return abort_parsing(
-                        elm, &cmd_stack, &op_stack,
-                        "Unable to initialize implicit operator");
-
-                op_stack = stack_push(op_stack, and_op);
-            }
+                op_stack = stack_push(op_stack, ast_init("-a"));
 
             was_cmd = 1;
         }
