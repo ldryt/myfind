@@ -1,5 +1,5 @@
-#ifndef AST_H
-#define AST_H
+#ifndef AST_EVAL_H
+#define AST_EVAL_H
 
 #define OPDELIM 100
 #define ACTDELIM 200
@@ -75,4 +75,4 @@ int is_action(const struct ast *ast);
 int is_test(const struct ast *ast);
 int precedence(const struct ast *ast1, const struct ast *ast2);
 
-#endif /* ! AST_H */
+#endif /* ! AST_EVAL_H */
