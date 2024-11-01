@@ -55,4 +55,7 @@ test_find . -perm -3
 touch a
 test_find . -newer a
 
+test_find * -user ldryt
+test_find * -group users
+
 echo "All tests passed ٩(^‿^)۶"

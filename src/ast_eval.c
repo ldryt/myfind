@@ -5,11 +5,14 @@
 #include <dirent.h>
 #include <err.h>
 #include <fnmatch.h>
+#include <grp.h>
 #include <limits.h>
+#include <pwd.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <sys/stat.h>
+#include <sys/types.h>
 
 #include "errn.h"
 
@@ -21,6 +24,8 @@ struct assoc alist[] = {
     { .name = "-type", .type = TYPE, .fun = eval_type },
     { .name = "-newer", .type = NEWER, .fun = eval_newer },
     { .name = "-perm", .type = PERM, .fun = eval_perm },
+    { .name = "-user", .type = USER, .fun = eval_user },
+    { .name = "-group", .type = GROUP, .fun = eval_group },
 };
 
 struct ast *ast_init(const char *name)
@@ -263,4 +268,58 @@ int eval_perm(const char *path, const struct ast *ast)
         ast_mode = strtol(ast->data.value, NULL, 8);
         return path_mode == ast_mode;
     }
+}
+
+int eval_user(const char *path, const struct ast *ast)
+{
+    struct stat sb;
+    struct passwd *path_pwd;
+    struct passwd *ast_pwd;
+
+    if (lstat(path, &sb))
+    {
+        warnx("eval_user: cannot stat '%s'", path);
+        return 0;
+    }
+
+    if (!(path_pwd = getpwuid(sb.st_uid)))
+    {
+        warnx("eval_user: cannot get passwd struct from '%s'", path);
+        return 0;
+    }
+
+    if (!(ast_pwd = getpwnam(ast->data.value)))
+    {
+        warnx("eval_type: cannot get passwd struct from '%s'", ast->data.value);
+        return 0;
+    }
+
+    return strcmp(ast_pwd->pw_name, path_pwd->pw_name) == 0;
+}
+
+int eval_group(const char *path, const struct ast *ast)
+{
+    struct stat sb;
+    struct group *path_grp;
+    struct group *ast_grp;
+
+    if (lstat(path, &sb))
+    {
+        warnx("eval_user: cannot stat '%s'", path);
+        return 0;
+    }
+
+    if (!(path_grp = getgrgid(sb.st_gid)))
+    {
+        warnx("eval_user: cannot get group struct from '%s'", path);
+        return 0;
+    }
+
+    if (!(ast_grp = getgrnam(ast->data.value)))
+    {
+        warnx("eval_type: cannot get group struct from '%s'", ast->data.value);
+        return 0;
+    }
+
+    return strcmp(ast_grp->gr_name, path_grp->gr_name) == 0;
 }

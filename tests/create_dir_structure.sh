@@ -24,7 +24,11 @@ touch .hidden_file
 touch "file with spaces.txt"
 
 create_file_with_perms "executable.sh" 755
-create_file_with_perms "readonly.txt" 444
+create_file_with_perms "a" 444
+create_file_with_perms "b" 666
+create_file_with_perms "c" 323
+create_file_with_perms "d" 643
+create_file_with_perms "e" 423
 
 ln -s file1.txt symlink_to_file1
 ln -s dir1 symlink_to_dir1
@@ -49,10 +53,6 @@ touch file.jpeg
 touch file.png
 touch file.tar.gz
 touch file.zip
-
-create_file_with_perms "suid_file" 4755
-create_file_with_perms "sgid_file" 2755
-create_file_with_perms "sticky_file" 1755
 
 echo "Test environment setup complete."
 echo "Directory structure:"
