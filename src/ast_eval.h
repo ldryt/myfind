@@ -15,6 +15,8 @@ enum type
     // Operators
     OR = 0,
     AND,
+    LPAR,
+    RPAR,
     NOT = OPDELIM,
 
     // Actions

@@ -40,6 +40,10 @@ test_find * -name '????' -o ! -name '???'
 test_find * -name '????' -o ! -name '???' -a -name 'dir1'
 test_find * ! -name '????' -o -name '???' -a -name 'dir1'
 
+test_find \( -name '*1*' -o \( -name '*.*' -a -name '*t*' \) \)
+test_find ! \( -name '*1*' -o \( -name '*.*' -a -name '*t*' \) \)
+test_find ! \( -name '*1*' -o \( -name '*.*' -a ! -name '*t*' \) \)
+
 test_find . -name "*.txt"
 
 test_find . -type f

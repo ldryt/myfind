@@ -27,6 +27,8 @@ struct assoc alist[] = {
     { .name = "-user", .type = USER, .fun = eval_user },
     { .name = "-group", .type = GROUP, .fun = eval_group },
     { .name = "!", .type = NOT, .fun = eval_not },
+    { .name = "(", .type = LPAR, .fun = NULL },
+    { .name = ")", .type = RPAR, .fun = NULL },
 };
 
 struct ast *ast_init(const char *name)

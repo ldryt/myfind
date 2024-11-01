@@ -52,7 +52,35 @@ struct ast *parse(struct queue *queue)
 
     while ((elm = queue_pop(queue)))
     {
-        if (!is_operator(elm))
+        if (elm->type == LPAR)
+        {
+            op_stack = stack_push(op_stack, elm);
+        }
+        else if (elm->type == RPAR)
+        {
+            while (op_stack && !((stack_peek(op_stack))->type == LPAR))
+            {
+                struct ast *op = stack_peek(op_stack);
+                op_stack = stack_pop(op_stack);
+
+                if (merge(op, &cmd_stack) != PASS)
+                    return abort_parsing(elm, &cmd_stack, &op_stack,
+                                         "Unable to merge");
+            }
+
+            if (!op_stack || !((stack_peek(op_stack))->type == LPAR))
+            {
+                return abort_parsing(elm, &cmd_stack, &op_stack,
+                                     "Mismatched parentheses");
+            }
+
+            struct ast *lpar = stack_peek(op_stack);
+            op_stack = stack_pop(op_stack);
+            ast_destroy(lpar);
+
+            ast_destroy(elm);
+        }
+        else if (!is_operator(elm))
         {
             cmd_stack = stack_push(cmd_stack, elm);
 
@@ -63,14 +91,17 @@ struct ast *parse(struct queue *queue)
         }
         else
         {
-            struct ast *op;
-            if (op_stack && precedence(elm, (op = stack_peek(op_stack))) < 0)
+            while (op_stack && !((stack_peek(op_stack)->type) == LPAR)
+                   && precedence(elm, stack_peek(op_stack)) <= 0)
             {
+                struct ast *op = stack_peek(op_stack);
                 op_stack = stack_pop(op_stack);
+
                 if (merge(op, &cmd_stack) != PASS)
                     return abort_parsing(elm, &cmd_stack, &op_stack,
                                          "Unable to merge");
             }
+
             op_stack = stack_push(op_stack, elm);
 
             was_cmd = 0;
@@ -79,10 +110,18 @@ struct ast *parse(struct queue *queue)
 
     while (op_stack)
     {
+        if ((stack_peek(op_stack))->type == LPAR)
+        {
+            return abort_parsing(NULL, &cmd_stack, &op_stack,
+                                 "Mismatched parentheses");
+        }
+
         struct ast *op = stack_peek(op_stack);
         op_stack = stack_pop(op_stack);
+
         if (merge(op, &cmd_stack) != PASS)
-            return abort_parsing(elm, &cmd_stack, &op_stack, "Unable to merge");
+            return abort_parsing(NULL, &cmd_stack, &op_stack,
+                                 "Unable to merge");
     }
 
     elm = stack_peek(cmd_stack);
