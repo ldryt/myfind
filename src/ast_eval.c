@@ -19,6 +19,7 @@ struct assoc alist[] = {
     { .name = "-print", .type = PRINT, .fun = eval_print },
     { .name = "-name", .type = NAME, .fun = eval_name },
     { .name = "-type", .type = TYPE, .fun = eval_type },
+    { .name = "-newer", .type = NEWER, .fun = eval_newer },
 };
 
 struct ast *ast_init(const char *name)
@@ -188,7 +189,7 @@ int eval_type(const char *path, const struct ast *ast)
     struct stat sb;
     if (lstat(path, &sb))
     {
-        warn("eval_type: cannot stat '%s'", path);
+        warnx("eval_type: cannot stat '%s'", path);
         return 0;
     }
 
@@ -211,4 +212,26 @@ int eval_type(const char *path, const struct ast *ast)
     default:
         return 0;
     }
+}
+
+int eval_newer(const char *path, const struct ast *ast)
+{
+    struct stat sb1;
+    struct stat sb2;
+
+    if (stat(path, &sb1) == -1)
+    {
+        warnx("eval_newer: cannot stat '%s'", path);
+        return 0;
+    }
+    if (stat(ast->data.value, &sb2) == -1)
+    {
+        warnx("eval_newer: cannot stat '%s'", ast->data.value);
+        return 0;
+    }
+
+    if (sb1.st_mtim.tv_sec == sb2.st_mtim.tv_sec)
+        return sb1.st_mtim.tv_nsec > sb2.st_mtim.tv_nsec;
+    else
+        return sb1.st_mtim.tv_sec > sb2.st_mtim.tv_sec;
 }

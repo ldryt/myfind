@@ -20,6 +20,7 @@ enum type
     // Tests
     NAME,
     TYPE,
+    NEWER,
 };
 
 struct ast
@@ -51,6 +52,7 @@ int eval_and(const char *path, const struct ast *ast);
 int eval_print(const char *path, const struct ast *ast);
 int eval_name(const char *path, const struct ast *ast);
 int eval_type(const char *path, const struct ast *ast);
+int eval_newer(const char *path, const struct ast *ast);
 
 struct ast *ast_init(const char *name);
 void ast_destroy(struct ast *ast);
