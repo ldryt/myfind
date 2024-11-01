@@ -4,7 +4,9 @@ test "$#" -ne 1 && echo "Need path of myfind as argument" && exit 1
 
 myfind_exec=$(realpath "$1")
 
-cd $(mktemp -d)
+tmpdir=$(mktemp -d)
+./tests/create_dir_structure.sh "$tmpdir"
+cd "$tmpdir"
 
 test_find() {
     params="$@"
@@ -25,17 +27,30 @@ test_find() {
     fi
 }
 
-test_find .
+test_find
+test_find *
+test_find ???
+test_find * -name '*'
+test_find * -name '????' -o -name '???'
+test_find * -name '????' -o -name '???'
+test_find * -name '????' -o -name '???' -a -name 'dir1'
 
 test_find . -name "*.txt"
 
 test_find . -type f
-
 test_find . -type ff
-
 test_find . -type d
+test_find . -type l
+test_find . -type p
 
 test_find . -perm 644
+test_find . -perm 755
+test_find . -perm /5
+test_find . -perm /1
+test_find . -perm /2
+test_find . -perm -644
+test_find . -perm -755
+test_find . -perm -3
 
 touch a
 test_find . -newer a
