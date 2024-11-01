@@ -20,6 +20,7 @@ struct assoc alist[] = {
     { .name = "-name", .type = NAME, .fun = eval_name },
     { .name = "-type", .type = TYPE, .fun = eval_type },
     { .name = "-newer", .type = NEWER, .fun = eval_newer },
+    { .name = "-perm", .type = PERM, .fun = eval_perm },
 };
 
 struct ast *ast_init(const char *name)
@@ -234,4 +235,32 @@ int eval_newer(const char *path, const struct ast *ast)
         return sb1.st_mtim.tv_nsec > sb2.st_mtim.tv_nsec;
     else
         return sb1.st_mtim.tv_sec > sb2.st_mtim.tv_sec;
+}
+
+int eval_perm(const char *path, const struct ast *ast)
+{
+    struct stat sb;
+    mode_t path_mode;
+    mode_t ast_mode;
+
+    if (lstat(path, &sb))
+    {
+        warnx("eval_type: cannot stat '%s'", path);
+        return 0;
+    }
+
+    path_mode = sb.st_mode & (S_IRWXU | S_IRWXG | S_IRWXO);
+
+    switch (ast->data.value[0])
+    {
+    case '-':
+        ast_mode = strtol(ast->data.value + 1, NULL, 8);
+        return (path_mode & ast_mode) == ast_mode;
+    case '/':
+        ast_mode = strtol(ast->data.value + 1, NULL, 8);
+        return (path_mode & ast_mode) != 0;
+    default:
+        ast_mode = strtol(ast->data.value, NULL, 8);
+        return path_mode == ast_mode;
+    }
 }

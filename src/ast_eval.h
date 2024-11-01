@@ -21,6 +21,7 @@ enum type
     NAME,
     TYPE,
     NEWER,
+    PERM,
 };
 
 struct ast
@@ -53,6 +54,7 @@ int eval_print(const char *path, const struct ast *ast);
 int eval_name(const char *path, const struct ast *ast);
 int eval_type(const char *path, const struct ast *ast);
 int eval_newer(const char *path, const struct ast *ast);
+int eval_perm(const char *path, const struct ast *ast);
 
 struct ast *ast_init(const char *name);
 void ast_destroy(struct ast *ast);

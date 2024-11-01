@@ -37,12 +37,28 @@ static int is_valid_value_type(const char *value)
     }
 }
 
+static int is_valid_value_perm(const char *value)
+{
+    size_t len = strlen(value);
+    switch (value[0])
+    {
+    case '-':
+        return len > 1;
+    case '/':
+        return len > 1;
+    default:
+        return value[0] >= '0' && value[0] <= '9';
+    }
+}
+
 static int is_valid_value(const char *value, enum type type)
 {
     switch (type)
     {
     case TYPE:
         return is_valid_value_type(value);
+    case PERM:
+        return is_valid_value_perm(value);
     default:
         return 1;
     }
@@ -71,8 +87,10 @@ struct queue *lex(char **arg)
                 return NULL;
             }
 
+            // TODO: move to parser
             if (!is_valid_value(arg[i + 1], elm->type))
             {
+                warnx("lex: invalid value '%s'", arg[i + 1]);
                 ast_destroy(elm);
                 return NULL;
             }
