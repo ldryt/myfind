@@ -2,7 +2,7 @@ CFLAGS = -std=c99 -pedantic -Werror -Wall -Wextra -Wvla -Isrc/
 LDFLAGS =
 CC = gcc
 
-SRC = src/main.c src/ast_eval.c src/lexer.c src/parser.c src/queue.c src/stack.c
+SRC = src/main.c src/ast_eval.c src/lexer.c src/parser.c src/queue.c src/stack.c src/options.c
 OBJ = $(SRC:.c=.o)
 BIN = myfind
 

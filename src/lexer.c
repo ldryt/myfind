@@ -76,6 +76,7 @@ struct queue *lex(char **arg)
         struct ast *elm = ast_init(arg[i]);
         if (!elm)
         {
+            free(q);
             warnx("lex: Unable to initialize elm");
             return NULL;
         }
@@ -84,6 +85,7 @@ struct queue *lex(char **arg)
         {
             if (!arg[i + 1])
             {
+                free(q);
                 ast_destroy(elm);
                 warnx("lex: No value after test argument");
                 return NULL;
@@ -92,8 +94,9 @@ struct queue *lex(char **arg)
             // TODO: move to parser
             if (!is_valid_value(arg[i + 1], elm->type))
             {
-                warnx("lex: invalid value '%s'", arg[i + 1]);
+                free(q);
                 ast_destroy(elm);
+                warnx("lex: invalid value '%s'", arg[i + 1]);
                 return NULL;
             }
 

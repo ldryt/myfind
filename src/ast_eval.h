@@ -4,6 +4,8 @@
 #define OPDELIM 100
 #define ACTDELIM 200
 
+#include "options.h"
+
 // Operators are <= OPDELIM and are
 // sorted from lower to higher precedence
 // Actions are > OPDELIM and <= ACTDELIM
@@ -47,7 +49,7 @@ struct assoc
     int (*fun)(const char *path, const struct ast *ast);
 };
 
-int lsdir(const char *path, const struct ast *ast);
+int lsdir(const char *path, const struct ast *ast, const struct opt opt);
 
 int eval(const char *path, const struct ast *ast);
 int eval_or(const char *path, const struct ast *ast);

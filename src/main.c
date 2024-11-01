@@ -1,6 +1,7 @@
 #include "ast_eval.h"
 #include "errn.h"
 #include "lexer.h"
+#include "options.h"
 #include "parser.h"
 #include "queue.h"
 
@@ -8,18 +9,29 @@ int main(int argc, char **argv)
 {
     int errn = PASS;
 
-    int expr_i = 1;
+    struct opt opt = {
+        .d = 0,
+        .H = 0,
+        .L = 0,
+        .P = 1,
+    };
+
+    int opt_i = 1;
+    while (opt_i < argc && get_opt(argv[opt_i], &opt))
+        opt_i++;
+
+    int expr_i = opt_i;
     while (expr_i < argc && argv[expr_i][0] != '-')
         expr_i++;
 
     if (expr_i >= argc)
     {
-        if (argc == 1)
-            return lsdir(".", NULL);
+        if (expr_i == opt_i)
+            return lsdir(".", NULL, opt);
 
-        for (int i = 1; i < expr_i; ++i)
+        for (int i = opt_i; i < expr_i; ++i)
         {
-            if (lsdir(argv[i], NULL) != PASS)
+            if (lsdir(argv[i], NULL, opt) != PASS)
                 errn = FAIL;
         }
         return errn;
@@ -36,13 +48,13 @@ int main(int argc, char **argv)
         return FAIL;
     }
 
-    if (1 >= expr_i)
-        if (lsdir(".", ast) != PASS)
+    if (opt_i >= expr_i)
+        if (lsdir(".", ast, opt) != PASS)
             errn = FAIL;
 
-    for (int i = 1; i < expr_i; ++i)
+    for (int i = opt_i; i < expr_i; ++i)
     {
-        if (lsdir(argv[i], ast) != PASS)
+        if (lsdir(argv[i], ast, opt) != PASS)
             errn = FAIL;
     }
 

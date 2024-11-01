@@ -95,7 +95,7 @@ int precedence(const struct ast *ast1, const struct ast *ast2)
     return (ast1->type > ast2->type) ? 1 : -1;
 }
 
-int lsdir(const char *path, const struct ast *ast)
+int lsdir(const char *path, const struct ast *ast, const struct opt opt)
 {
     DIR *dp;
     struct dirent *dt;
@@ -111,31 +111,34 @@ int lsdir(const char *path, const struct ast *ast)
         return FAIL;
     }
 
-    if (eval(path, ast) == 1)
+    if (eval(path, ast) == 1 && !opt.d)
         printf("%s\n", path);
 
-    if (!S_ISDIR(sb.st_mode))
-        return PASS;
-
-    if (!(dp = opendir(path)))
+    if (S_ISDIR(sb.st_mode))
     {
-        warn("lsdir: cannot open directory '%s'", path);
-        return FAIL;
+        if (!(dp = opendir(path)))
+        {
+            warn("lsdir: cannot open directory '%s'", path);
+            return FAIL;
+        }
+
+        while ((dt = readdir(dp)))
+        {
+            if (strcmp(dt->d_name, ".") == 0 || strcmp(dt->d_name, "..") == 0)
+                continue;
+
+            snprintf(subpath, sizeof(subpath), "%s%s%s", path,
+                    (path[path_len - 1] == '/') ? "" : "/", dt->d_name);
+
+            if (lsdir(subpath, ast, opt) != PASS)
+                errn = FAIL;
+        }
+
+        closedir(dp);
     }
 
-    while ((dt = readdir(dp)))
-    {
-        if (strcmp(dt->d_name, ".") == 0 || strcmp(dt->d_name, "..") == 0)
-            continue;
-
-        snprintf(subpath, sizeof(subpath), "%s%s%s", path,
-                 (path[path_len - 1] == '/') ? "" : "/", dt->d_name);
-
-        if (lsdir(subpath, ast) != PASS)
-            errn = FAIL;
-    }
-
-    closedir(dp);
+    if (eval(path, ast) == 1 && opt.d)
+        printf("%s\n", path);
 
     return errn;
 }
