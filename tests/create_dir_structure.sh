@@ -17,6 +17,7 @@ mkdir -p dir1/dir2/dir3
 mkdir -p dirA/dirB
 mkdir -p .hidden_dir
 mkdir "dir with spaces"
+mkdir dir2
 
 touch file1.txt
 touch file2.log
@@ -53,6 +54,10 @@ touch file.jpeg
 touch file.png
 touch file.tar.gz
 touch file.zip
+
+mkdir foo
+touch foo/ba{z,r}
+ln -s foo qux
 
 echo "Test environment setup complete."
 echo "Directory structure:"

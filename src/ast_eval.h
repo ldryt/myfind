@@ -49,7 +49,8 @@ struct assoc
     int (*fun)(const char *path, const struct ast *ast);
 };
 
-int lsdir(const char *path, const struct ast *ast, const struct opt opt);
+int lsdir(const char *path, const struct ast *ast, const struct opt opt,
+          int is_arg);
 
 int eval(const char *path, const struct ast *ast);
 int eval_or(const char *path, const struct ast *ast);

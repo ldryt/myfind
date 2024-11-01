@@ -52,10 +52,16 @@ test_find . -perm -644
 test_find . -perm -755
 test_find . -perm -3
 
-touch a
-test_find . -newer a
+test_find . -newer dir2
+test_find dir2 -newer dir1
+test_find dir1 -newer dir2
+test_find dir2 -newer dir2
 
 test_find * -user ldryt
 test_find * -group users
+
+test_find qux
+test_find -L .
+test_find -H qux
 
 echo "All tests passed ٩(^‿^)۶"

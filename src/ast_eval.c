@@ -95,7 +95,8 @@ int precedence(const struct ast *ast1, const struct ast *ast2)
     return (ast1->type > ast2->type) ? 1 : -1;
 }
 
-int lsdir(const char *path, const struct ast *ast, const struct opt opt)
+int lsdir(const char *path, const struct ast *ast, const struct opt opt,
+          int is_arg)
 {
     DIR *dp;
     struct dirent *dt;
@@ -114,7 +115,8 @@ int lsdir(const char *path, const struct ast *ast, const struct opt opt)
     if (eval(path, ast) == 1 && !opt.d)
         printf("%s\n", path);
 
-    if (S_ISDIR(sb.st_mode))
+    if (S_ISDIR(sb.st_mode)
+        || (S_ISLNK(sb.st_mode) && (opt.L || (opt.H && is_arg))))
     {
         if (!(dp = opendir(path)))
         {
@@ -128,9 +130,9 @@ int lsdir(const char *path, const struct ast *ast, const struct opt opt)
                 continue;
 
             snprintf(subpath, sizeof(subpath), "%s%s%s", path,
-                    (path[path_len - 1] == '/') ? "" : "/", dt->d_name);
+                     (path[path_len - 1] == '/') ? "" : "/", dt->d_name);
 
-            if (lsdir(subpath, ast, opt) != PASS)
+            if (lsdir(subpath, ast, opt, 0) != PASS)
                 errn = FAIL;
         }
 

@@ -27,11 +27,11 @@ int main(int argc, char **argv)
     if (expr_i >= argc)
     {
         if (expr_i == opt_i)
-            return lsdir(".", NULL, opt);
+            return lsdir(".", NULL, opt, 1);
 
         for (int i = opt_i; i < expr_i; ++i)
         {
-            if (lsdir(argv[i], NULL, opt) != PASS)
+            if (lsdir(argv[i], NULL, opt, 1) != PASS)
                 errn = FAIL;
         }
         return errn;
@@ -49,12 +49,12 @@ int main(int argc, char **argv)
     }
 
     if (opt_i >= expr_i)
-        if (lsdir(".", ast, opt) != PASS)
+        if (lsdir(".", ast, opt, 1) != PASS)
             errn = FAIL;
 
     for (int i = opt_i; i < expr_i; ++i)
     {
-        if (lsdir(argv[i], ast, opt) != PASS)
+        if (lsdir(argv[i], ast, opt, 1) != PASS)
             errn = FAIL;
     }
 
