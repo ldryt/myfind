@@ -11,7 +11,8 @@ static int is_valid_value_type(const char *value)
 {
     if (strlen(value) != 1)
     {
-        warnx("is_valid_value: value '%s' of type argument is not valid", value);
+        warnx("is_valid_value: value '%s' of type argument is not valid",
+              value);
         return 0;
     }
 
@@ -32,7 +33,8 @@ static int is_valid_value_type(const char *value)
     case 's':
         return 1;
     default:
-        warnx("is_valid_value: value '%s' of type argument is not valid", value);
+        warnx("is_valid_value: value '%s' of type argument is not valid",
+              value);
         return 0;
     }
 }
