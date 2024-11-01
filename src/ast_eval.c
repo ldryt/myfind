@@ -26,6 +26,7 @@ struct assoc alist[] = {
     { .name = "-perm", .type = PERM, .fun = eval_perm },
     { .name = "-user", .type = USER, .fun = eval_user },
     { .name = "-group", .type = GROUP, .fun = eval_group },
+    { .name = "!", .type = NOT, .fun = eval_not },
 };
 
 struct ast *ast_init(const char *name)
@@ -327,4 +328,9 @@ int eval_group(const char *path, const struct ast *ast)
     }
 
     return strcmp(ast_grp->gr_name, path_grp->gr_name) == 0;
+}
+
+int eval_not(const char *path, const struct ast *ast)
+{
+    return !eval(path, ast->data.children.right);
 }

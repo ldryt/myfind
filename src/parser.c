@@ -8,7 +8,7 @@
 
 static int merge(struct ast *op, struct stack **cmd_stack)
 {
-    if (!*cmd_stack || !(*cmd_stack)->next)
+    if (!*cmd_stack || (!(*cmd_stack)->next && op->type != NOT))
     {
         ast_destroy(op);
         warnx("merge: invalid expression (cmd_stack doesn't contain enough "
@@ -19,8 +19,11 @@ static int merge(struct ast *op, struct stack **cmd_stack)
     op->data.children.right = stack_peek(*cmd_stack);
     *cmd_stack = stack_pop(*cmd_stack);
 
-    op->data.children.left = stack_peek(*cmd_stack);
-    *cmd_stack = stack_pop(*cmd_stack);
+    if (op->type != NOT)
+    {
+        op->data.children.left = stack_peek(*cmd_stack);
+        *cmd_stack = stack_pop(*cmd_stack);
+    }
 
     *cmd_stack = stack_push(*cmd_stack, op);
 

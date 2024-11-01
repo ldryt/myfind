@@ -5,6 +5,23 @@
 #include "parser.h"
 #include "queue.h"
 
+static int is_expr(char *str)
+{
+    switch (str[0])
+    {
+    case '-':
+    /* FALLTHROUGH */
+    case '!':
+    /* FALLTHROUGH */
+    case '(':
+    /* FALLTHROUGH */
+    case ')':
+        return 1;
+    default:
+        return 0;
+    }
+}
+
 int main(int argc, char **argv)
 {
     int errn = PASS;
@@ -21,7 +38,7 @@ int main(int argc, char **argv)
         opt_i++;
 
     int expr_i = opt_i;
-    while (expr_i < argc && argv[expr_i][0] != '-')
+    while (expr_i < argc && !is_expr(argv[expr_i]))
         expr_i++;
 
     if (expr_i >= argc)
