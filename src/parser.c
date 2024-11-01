@@ -2,6 +2,7 @@
 
 #include <stddef.h>
 #include <stdlib.h>
+#include <string.h>
 
 #include "errn.h"
 #include "stack.h"
@@ -40,6 +41,65 @@ static void *abort_parsing(struct ast *elm, struct stack **cmd_stack,
     return NULL;
 }
 
+static int is_valid_value_type(const char *value)
+{
+    if (strlen(value) != 1)
+    {
+        warnx("is_valid_value: value '%s' of type argument is not valid",
+              value);
+        return 0;
+    }
+
+    switch (value[0])
+    {
+    case 'f':
+    /* FALLTHROUGH */
+    case 'd':
+    /* FALLTHROUGH */
+    case 'c':
+    /* FALLTHROUGH */
+    case 'b':
+    /* FALLTHROUGH */
+    case 'p':
+    /* FALLTHROUGH */
+    case 'l':
+    /* FALLTHROUGH */
+    case 's':
+        return 1;
+    default:
+        warnx("is_valid_value: value '%s' of type argument is not valid",
+              value);
+        return 0;
+    }
+}
+
+static int is_valid_value_perm(const char *value)
+{
+    size_t len = strlen(value);
+    switch (value[0])
+    {
+    case '-':
+        return len > 1;
+    case '/':
+        return len > 1;
+    default:
+        return value[0] >= '0' && value[0] <= '9';
+    }
+}
+
+static int is_valid_value(const char *value, enum type type)
+{
+    switch (type)
+    {
+    case TYPE:
+        return is_valid_value_type(value);
+    case PERM:
+        return is_valid_value_perm(value);
+    default:
+        return 1;
+    }
+}
+
 struct ast *parse(struct queue *queue)
 {
     struct ast *elm;
@@ -52,6 +112,10 @@ struct ast *parse(struct queue *queue)
 
     while ((elm = queue_pop(queue)))
     {
+        if (!is_valid_value(elm->data.value, elm->type))
+            return abort_parsing(elm, &cmd_stack, &op_stack,
+                    "Invalid value");
+
         if (elm->type == LPAR)
         {
             op_stack = stack_push(op_stack, elm);
