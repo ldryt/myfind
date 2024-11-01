@@ -2,6 +2,7 @@
 #define STACK_H
 
 #include "lexer.h"
+#include "ast_eval.h"
 
 struct stack
 {

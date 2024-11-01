@@ -2,6 +2,7 @@
 
 #include <err.h>
 #include <stddef.h>
+#include <stdlib.h>
 
 #include "ast_eval.h"
 
@@ -23,6 +24,7 @@ struct queue *lex(char **arg)
         {
             if (!arg[i + 1])
             {
+                ast_destroy(elm);
                 warnx("lex: No value after test argument");
                 return NULL;
             }

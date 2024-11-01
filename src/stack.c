@@ -35,6 +35,6 @@ void stack_destroy(struct stack *s)
     {
         tmp = stack_peek(s);
         s = stack_pop(s);
-        free(tmp);
+        ast_destroy(tmp);
     }
 }

@@ -1,6 +1,7 @@
 #include "parser.h"
 
 #include <stddef.h>
+#include <stdlib.h>
 
 #include "errn.h"
 #include "stack.h"
@@ -9,6 +10,7 @@ static int merge(struct ast *op, struct stack **cmd_stack)
 {
     if (!*cmd_stack || !(*cmd_stack)->next)
     {
+        ast_destroy(op);
         warnx("merge: invalid expression (cmd_stack doesn't contain enough "
               "elements)");
         return FAIL;
@@ -28,7 +30,7 @@ static int merge(struct ast *op, struct stack **cmd_stack)
 static void *abort_parsing(struct ast *elm, struct stack **cmd_stack,
                            struct stack **op_stack, char *msg)
 {
-    warn("abort_parsing: %s", msg);
+    warnx("abort_parsing: %s", msg);
     ast_destroy(elm);
     stack_destroy(*cmd_stack);
     stack_destroy(*op_stack);

@@ -29,6 +29,10 @@ struct ast *ast_init(const char *name)
         return NULL;
     }
 
+    ast->data.value = NULL;
+    ast->data.children.left = NULL;
+    ast->data.children.right = NULL;
+
     for (size_t i = 0; i < sizeof(alist) / sizeof(alist[0]); ++i)
     {
         if (strcmp(name, alist[i].name) == 0)

@@ -31,7 +31,10 @@ int main(int argc, char **argv)
 
     struct ast *ast = parse(q);
     if (!ast)
+    {
+        queue_destroy(q);
         return FAIL;
+    }
 
     if (1 >= expr_i)
         if (lsdir(".", ast) != PASS)
