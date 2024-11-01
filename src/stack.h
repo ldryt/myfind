@@ -1,8 +1,8 @@
 #ifndef STACK_H
 #define STACK_H
 
-#include "lexer.h"
 #include "ast_eval.h"
+#include "lexer.h"
 
 struct stack
 {

@@ -18,6 +18,7 @@ struct assoc alist[] = {
     { .name = "-o", .type = OR, .fun = eval_or },
     { .name = "-print", .type = PRINT, .fun = eval_print },
     { .name = "-name", .type = NAME, .fun = eval_name },
+    { .name = "-type", .type = TYPE, .fun = eval_type },
 };
 
 struct ast *ast_init(const char *name)
@@ -180,4 +181,34 @@ int eval_name(const char *path, const struct ast *ast)
 {
     int res = fnmatch(ast->data.value, get_name(path), 0) == 0;
     return res;
+}
+
+int eval_type(const char *path, const struct ast *ast)
+{
+    struct stat sb;
+    if (lstat(path, &sb))
+    {
+        warn("eval_type: cannot stat '%s'", path);
+        return 0;
+    }
+
+    switch (ast->data.value[0])
+    {
+    case 'f':
+        return S_ISREG(sb.st_mode);
+    case 'd':
+        return S_ISDIR(sb.st_mode);
+    case 'c':
+        return S_ISCHR(sb.st_mode);
+    case 'b':
+        return S_ISBLK(sb.st_mode);
+    case 'p':
+        return S_ISFIFO(sb.st_mode);
+    case 'l':
+        return S_ISLNK(sb.st_mode);
+    case 's':
+        return S_ISSOCK(sb.st_mode);
+    default:
+        return 0;
+    }
 }
