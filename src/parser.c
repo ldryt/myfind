@@ -107,7 +107,7 @@ static int handle_lpar(struct ast *elm, struct stack **op_stack)
 }
 
 static int handle_rpar(struct ast *elm, struct stack **cmd_stack,
-                                    struct stack **op_stack)
+                       struct stack **op_stack)
 {
     while (*op_stack && (stack_peek(*op_stack))->type != LPAR)
     {
@@ -144,10 +144,10 @@ static int handle_operand(struct ast *elm, struct stack **cmd_stack,
 }
 
 static int handle_operator(struct ast *elm, struct stack **cmd_stack,
-                           struct stack **op_stack)
+                           struct stack **op_stack, int *was_cmd)
 {
-    while (*op_stack && (stack_peek(*op_stack))->type != LPAR &&
-           precedence(elm, stack_peek(*op_stack)) <= 0)
+    while (*op_stack && (stack_peek(*op_stack))->type != LPAR
+           && precedence(elm, stack_peek(*op_stack)) <= 0)
     {
         struct ast *op = stack_peek(*op_stack);
         *op_stack = stack_pop(*op_stack);
@@ -157,6 +157,7 @@ static int handle_operator(struct ast *elm, struct stack **cmd_stack,
     }
 
     *op_stack = stack_push(*op_stack, elm);
+    *was_cmd = 0;
     return PASS;
 }
 
@@ -180,7 +181,16 @@ static int process_remaining_operators(struct stack **cmd_stack,
     return PASS;
 }
 
-struct ast *parse(struct queue *queue)
+static void handle_print(struct ast *elm, int *print)
+{
+    if (!(*print) && elm->type == PRINT)
+    {
+        *print = 1;
+        return;
+    }
+}
+
+struct ast *parse(struct queue *queue, int *print)
 {
     struct ast *elm;
     int was_cmd = 0;
@@ -188,12 +198,17 @@ struct ast *parse(struct queue *queue)
     struct stack *cmd_stack = NULL;
 
     if (!queue_seek(queue))
+    {
+        *print = 1;
         return ast_init("-print");
+    }
 
     while ((elm = queue_pop(queue)))
     {
         if (!is_valid_value(elm->data.value, elm->type))
             return abort_parsing(elm, &cmd_stack, &op_stack, "Invalid value");
+
+        handle_print(elm, print);
 
         int errn = PASS;
 
@@ -211,8 +226,7 @@ struct ast *parse(struct queue *queue)
         }
         else
         {
-            errn = handle_operator(elm, &cmd_stack, &op_stack);
-            was_cmd = 0;
+            errn = handle_operator(elm, &cmd_stack, &op_stack, &was_cmd);
         }
 
         if (errn != PASS)

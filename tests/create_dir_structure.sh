@@ -42,6 +42,11 @@ touch "file(2).txt"
 touch "file{3}.txt"
 touch "file#4.txt"
 touch "file\$5.txt"
+touch "file"
+touch "fie2"
+touch "feww"
+touch "few"
+touch "fe1"
 
 touch dir1/1.txt
 touch dir1/1.txta

@@ -9,20 +9,24 @@ tmpdir=$(mktemp -d)
 cd "$tmpdir"
 
 test_find() {
-    params="$@"
-    echo "Testing with parameters: $params"
+    echo "Testing with parameters: $@"
 
-    find_output=$(find $params 2>/dev/null)
+    find_output=$(find "$@")
+    find_status=$(echo $?)
 
-    myfind_output=$("$myfind_exec" $params 2>/dev/null)
+    myfind_output=$("$myfind_exec" "$@")
+    myfind_status=$(echo $?)
 
-    if diff <(echo "$find_output") <(echo "$myfind_output"); then
+    if diff <(echo "$find_output") <(echo "$myfind_output") && test $myfind_status -eq $find_status; then
         echo "Test passed"
         echo "---"
     else
         echo "------"
+        echo "$tmpdir"
         echo "ᕕ(╭ರ╭ ͟ʖ╮•́)⊃¤=(————-"
-        echo "Test failed with parameters: $params"
+        echo "Test failed with parameters: $@"
+        echo "find_status: $find_status"
+        echo "myfind_status: $myfind_status"
         exit 1
     fi
 }
@@ -72,5 +76,11 @@ test_find * -group users
 test_find qux
 test_find -L .
 test_find -H qux
+
+test_find * ! -name '????' -o -name '???' -a -name 'dir1' -print
+test_find * ! -name '????' -o -name '???' -print -a -name 'dir1'
+test_find * ! -name '????' -o -name '???' -print -a -name 'dir1'
+test_find * ! -name '????' -o -name '???' -print -a -name 'dir1' -print
+test_find * ! -name '????' -o -print -name '???' -print -a -name 'dir1' -print
 
 echo "All tests passed ٩(^‿^)۶"

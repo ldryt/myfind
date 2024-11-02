@@ -1,24 +1,18 @@
 #include "ast.h"
 
 #include <err.h>
-#include <string.h>
 #include <stdlib.h>
+#include <string.h>
 
 #include "errn.h"
 
 struct assoc_name alist_name[] = {
-    { .type = AND,   .name = "-a" },
-    { .type = OR,    .name = "-o" },
-    { .type = PRINT, .name = "-print" },
-    { .type = NAME,  .name = "-name" },
-    { .type = TYPE,  .name = "-type" },
-    { .type = NEWER, .name = "-newer" },
-    { .type = PERM,  .name = "-perm" },
-    { .type = USER,  .name = "-user" },
-    { .type = GROUP, .name = "-group" },
-    { .type = NOT,   .name = "!" },
-    { .type = LPAR,  .name = "(" },
-    { .type = RPAR,  .name = ")" },
+    { .type = AND, .name = "-a" },       { .type = OR, .name = "-o" },
+    { .type = PRINT, .name = "-print" }, { .type = NAME, .name = "-name" },
+    { .type = TYPE, .name = "-type" },   { .type = NEWER, .name = "-newer" },
+    { .type = PERM, .name = "-perm" },   { .type = USER, .name = "-user" },
+    { .type = GROUP, .name = "-group" }, { .type = NOT, .name = "!" },
+    { .type = LPAR, .name = "(" },       { .type = RPAR, .name = ")" },
 };
 
 struct ast *ast_init(const char *name)

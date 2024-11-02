@@ -15,19 +15,54 @@
 #include <sys/types.h>
 
 #include "ast.h"
-#include "options.h"
 #include "errn.h"
+#include "options.h"
 
-int lsdir(const char *path, const struct ast *ast, const struct opt opt,
-          int is_arg)
+int should_process_directory(struct stat sb, struct opt opt, int is_arg)
+{
+    return (S_ISDIR(sb.st_mode)
+            || (S_ISLNK(sb.st_mode) && (opt.L || (opt.H && is_arg))));
+}
+
+void build_subpath(char *subpath, size_t size, const char *path,
+                   const char *d_name)
+{
+    size_t path_len = strlen(path);
+    snprintf(subpath, size, "%s%s%s", path,
+             (path[path_len - 1] == '/') ? "" : "/", d_name);
+}
+
+int process_directory(const char *path, const struct ast *ast,
+                      const struct opt opt, int eval_print)
 {
     DIR *dp;
     struct dirent *dt;
-    struct stat sb;
     char subpath[PATH_MAX];
-
     int errn = PASS;
-    size_t path_len = strlen(path);
+
+    if (!(dp = opendir(path)))
+        return PASS;
+
+    while ((dt = readdir(dp)))
+    {
+        if (strcmp(dt->d_name, ".") == 0 || strcmp(dt->d_name, "..") == 0)
+            continue;
+
+        build_subpath(subpath, sizeof(subpath), path, dt->d_name);
+
+        if (lsdir(subpath, ast, opt, 0, eval_print) != PASS)
+            errn = FAIL;
+    }
+
+    closedir(dp);
+    return errn;
+}
+
+int lsdir(const char *path, const struct ast *ast, const struct opt opt,
+          int is_arg, int eval_print)
+{
+    struct stat sb;
+    int errn = PASS;
 
     if (lstat(path, &sb))
     {
@@ -35,35 +70,19 @@ int lsdir(const char *path, const struct ast *ast, const struct opt opt,
         return FAIL;
     }
 
-    if (eval(path, ast) == 1 && !opt.d)
-        printf("%s\n", path);
+    if (!opt.d && eval(path, ast) == 1)
+        if (!eval_print)
+            printf("%s\n", path);
 
-    if (S_ISDIR(sb.st_mode)
-        || (S_ISLNK(sb.st_mode) && (opt.L || (opt.H && is_arg))))
+    if (should_process_directory(sb, opt, is_arg))
     {
-        if (!(dp = opendir(path)))
-        {
-            warn("lsdir: cannot open directory '%s'", path);
-            return FAIL;
-        }
-
-        while ((dt = readdir(dp)))
-        {
-            if (strcmp(dt->d_name, ".") == 0 || strcmp(dt->d_name, "..") == 0)
-                continue;
-
-            snprintf(subpath, sizeof(subpath), "%s%s%s", path,
-                     (path[path_len - 1] == '/') ? "" : "/", dt->d_name);
-
-            if (lsdir(subpath, ast, opt, 0) != PASS)
-                errn = FAIL;
-        }
-
-        closedir(dp);
+        if (process_directory(path, ast, opt, eval_print) != PASS)
+            errn = FAIL;
     }
 
-    if (eval(path, ast) == 1 && opt.d)
-        printf("%s\n", path);
+    if (opt.d && eval(path, ast) == 1)
+        if (!eval_print)
+            printf("%s\n", path);
 
     return errn;
 }
@@ -80,9 +99,11 @@ static int eval_and(const char *path, const struct ast *ast)
         && eval(path, ast->data.children.right);
 }
 
-static int eval_print(const char *path, __attribute__((unused)) const struct ast *ast)
+static int eval_print(const char *path,
+                      __attribute__((unused)) const struct ast *ast)
 {
-    return printf("%s\n", path);
+    printf("%s\n", path);
+    return 1;
 }
 
 static const char *get_name(const char *path)
@@ -245,16 +266,11 @@ static int eval_not(const char *path, const struct ast *ast)
 }
 
 struct assoc_fun alist_fun[] = {
-    { .type = AND,   .fun = eval_and },
-    { .type = OR,    .fun = eval_or },
-    { .type = PRINT, .fun = eval_print },
-    { .type = NAME,  .fun = eval_name },
-    { .type = TYPE,  .fun = eval_type },
-    { .type = NEWER, .fun = eval_newer },
-    { .type = PERM,  .fun = eval_perm },
-    { .type = USER,  .fun = eval_user },
-    { .type = GROUP, .fun = eval_group },
-    { .type = NOT,   .fun = eval_not },
+    { .type = AND, .fun = eval_and },     { .type = OR, .fun = eval_or },
+    { .type = PRINT, .fun = eval_print }, { .type = NAME, .fun = eval_name },
+    { .type = TYPE, .fun = eval_type },   { .type = NEWER, .fun = eval_newer },
+    { .type = PERM, .fun = eval_perm },   { .type = USER, .fun = eval_user },
+    { .type = GROUP, .fun = eval_group }, { .type = NOT, .fun = eval_not },
 };
 
 int eval(const char *path, const struct ast *ast)

@@ -7,7 +7,6 @@
 
 #include "ast.h"
 
-
 struct queue *lex(char **arg)
 {
     struct queue *q = queue_init();
@@ -18,7 +17,7 @@ struct queue *lex(char **arg)
         struct ast *elm = ast_init(arg[i]);
         if (!elm)
         {
-            free(q);
+            queue_destroy(q);
             warnx("lex: Unable to initialize elm");
             return NULL;
         }
@@ -27,7 +26,7 @@ struct queue *lex(char **arg)
         {
             if (!arg[i + 1])
             {
-                free(q);
+                queue_destroy(q);
                 ast_destroy(elm);
                 warnx("lex: No value after test argument");
                 return NULL;
