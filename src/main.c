@@ -1,5 +1,6 @@
-#include "ast_eval.h"
+#include "ast.h"
 #include "errn.h"
+#include "eval.h"
 #include "lexer.h"
 #include "options.h"
 #include "parser.h"
@@ -22,24 +23,30 @@ static int is_expr(char *str)
     }
 }
 
+int find_options_idx(int argc, char **argv, struct opt *opt)
+{
+    int opt_i = 1;
+    while (opt_i < argc && get_opt(argv[opt_i], opt))
+        opt_i++;
+    return opt_i;
+}
+
+int find_expressions_idx(int argc, char **argv, int start_index)
+{
+    int expr_i = start_index;
+    while (expr_i < argc && !is_expr(argv[expr_i]))
+        expr_i++;
+    return expr_i;
+}
+
 int main(int argc, char **argv)
 {
     int errn = PASS;
 
-    struct opt opt = {
-        .d = 0,
-        .H = 0,
-        .L = 0,
-        .P = 1,
-    };
+    struct opt opt = { .d = 0, .H = 0, .L = 0, .P = 1 };
 
-    int opt_i = 1;
-    while (opt_i < argc && get_opt(argv[opt_i], &opt))
-        opt_i++;
-
-    int expr_i = opt_i;
-    while (expr_i < argc && !is_expr(argv[expr_i]))
-        expr_i++;
+    int opt_i = find_options_idx(argc, argv, &opt);
+    int expr_i = find_expressions_idx(argc, argv, opt_i);
 
     if (expr_i >= argc)
     {

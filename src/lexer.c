@@ -5,7 +5,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "ast_eval.h"
+#include "ast.h"
 
 
 struct queue *lex(char **arg)

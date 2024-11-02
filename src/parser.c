@@ -100,6 +100,86 @@ static int is_valid_value(const char *value, enum type type)
     }
 }
 
+static int handle_lpar(struct ast *elm, struct stack **op_stack)
+{
+    *op_stack = stack_push(*op_stack, elm);
+    return PASS;
+}
+
+static int handle_rpar(struct ast *elm, struct stack **cmd_stack,
+                                    struct stack **op_stack)
+{
+    while (*op_stack && (stack_peek(*op_stack))->type != LPAR)
+    {
+        struct ast *op = stack_peek(*op_stack);
+        *op_stack = stack_pop(*op_stack);
+
+        if (merge(op, cmd_stack) != PASS)
+            return FAIL;
+    }
+
+    if (!*op_stack || (stack_peek(*op_stack))->type != LPAR)
+    {
+        return FAIL; // Mismatched parentheses
+    }
+
+    struct ast *lpar = stack_peek(*op_stack);
+    *op_stack = stack_pop(*op_stack);
+    ast_destroy(lpar);
+    ast_destroy(elm);
+
+    return PASS;
+}
+
+static int handle_operand(struct ast *elm, struct stack **cmd_stack,
+                          struct stack **op_stack, int *was_cmd)
+{
+    *cmd_stack = stack_push(*cmd_stack, elm);
+
+    if (*was_cmd)
+        *op_stack = stack_push(*op_stack, ast_init("-a"));
+
+    *was_cmd = 1;
+    return PASS;
+}
+
+static int handle_operator(struct ast *elm, struct stack **cmd_stack,
+                           struct stack **op_stack)
+{
+    while (*op_stack && (stack_peek(*op_stack))->type != LPAR &&
+           precedence(elm, stack_peek(*op_stack)) <= 0)
+    {
+        struct ast *op = stack_peek(*op_stack);
+        *op_stack = stack_pop(*op_stack);
+
+        if (merge(op, cmd_stack) != PASS)
+            return FAIL;
+    }
+
+    *op_stack = stack_push(*op_stack, elm);
+    return PASS;
+}
+
+static int process_remaining_operators(struct stack **cmd_stack,
+                                       struct stack **op_stack)
+{
+    while (*op_stack)
+    {
+        if ((stack_peek(*op_stack))->type == LPAR)
+        {
+            return FAIL; // Mismatched parentheses
+        }
+
+        struct ast *op = stack_peek(*op_stack);
+        *op_stack = stack_pop(*op_stack);
+
+        if (merge(op, cmd_stack) != PASS)
+            return FAIL;
+    }
+
+    return PASS;
+}
+
 struct ast *parse(struct queue *queue)
 {
     struct ast *elm;
@@ -113,80 +193,34 @@ struct ast *parse(struct queue *queue)
     while ((elm = queue_pop(queue)))
     {
         if (!is_valid_value(elm->data.value, elm->type))
-            return abort_parsing(elm, &cmd_stack, &op_stack,
-                    "Invalid value");
+            return abort_parsing(elm, &cmd_stack, &op_stack, "Invalid value");
+
+        int errn = PASS;
 
         if (elm->type == LPAR)
         {
-            op_stack = stack_push(op_stack, elm);
+            errn = handle_lpar(elm, &op_stack);
         }
         else if (elm->type == RPAR)
         {
-            while (op_stack && !((stack_peek(op_stack))->type == LPAR))
-            {
-                struct ast *op = stack_peek(op_stack);
-                op_stack = stack_pop(op_stack);
-
-                if (merge(op, &cmd_stack) != PASS)
-                    return abort_parsing(elm, &cmd_stack, &op_stack,
-                                         "Unable to merge");
-            }
-
-            if (!op_stack || !((stack_peek(op_stack))->type == LPAR))
-            {
-                return abort_parsing(elm, &cmd_stack, &op_stack,
-                                     "Mismatched parentheses");
-            }
-
-            struct ast *lpar = stack_peek(op_stack);
-            op_stack = stack_pop(op_stack);
-            ast_destroy(lpar);
-
-            ast_destroy(elm);
+            errn = handle_rpar(elm, &cmd_stack, &op_stack);
         }
         else if (!is_operator(elm))
         {
-            cmd_stack = stack_push(cmd_stack, elm);
-
-            if (was_cmd)
-                op_stack = stack_push(op_stack, ast_init("-a"));
-
-            was_cmd = 1;
+            errn = handle_operand(elm, &cmd_stack, &op_stack, &was_cmd);
         }
         else
         {
-            while (op_stack && !((stack_peek(op_stack)->type) == LPAR)
-                   && precedence(elm, stack_peek(op_stack)) <= 0)
-            {
-                struct ast *op = stack_peek(op_stack);
-                op_stack = stack_pop(op_stack);
-
-                if (merge(op, &cmd_stack) != PASS)
-                    return abort_parsing(elm, &cmd_stack, &op_stack,
-                                         "Unable to merge");
-            }
-
-            op_stack = stack_push(op_stack, elm);
-
+            errn = handle_operator(elm, &cmd_stack, &op_stack);
             was_cmd = 0;
         }
+
+        if (errn != PASS)
+            return abort_parsing(elm, &cmd_stack, &op_stack, "¯\\(°_o)/¯");
     }
 
-    while (op_stack)
-    {
-        if ((stack_peek(op_stack))->type == LPAR)
-        {
-            return abort_parsing(NULL, &cmd_stack, &op_stack,
-                                 "Mismatched parentheses");
-        }
-
-        struct ast *op = stack_peek(op_stack);
-        op_stack = stack_pop(op_stack);
-
-        if (merge(op, &cmd_stack) != PASS)
-            return abort_parsing(NULL, &cmd_stack, &op_stack,
-                                 "Unable to merge");
-    }
+    if (process_remaining_operators(&cmd_stack, &op_stack) != PASS)
+        return abort_parsing(NULL, &cmd_stack, &op_stack, "Mismatch par");
 
     elm = stack_peek(cmd_stack);
     cmd_stack = stack_pop(cmd_stack);
