@@ -18,10 +18,10 @@
 #include "errn.h"
 #include "options.h"
 
-int should_process_directory(struct stat sb, struct opt opt, int is_arg)
+int should_process_directory(struct stat sb, struct opt opt)
 {
     return (S_ISDIR(sb.st_mode)
-            || (S_ISLNK(sb.st_mode) && (opt.L || (opt.H && is_arg))));
+            || (S_ISLNK(sb.st_mode) && (opt.L || (opt.H && opt.is_arg))));
 }
 
 void build_subpath(char *subpath, size_t size, const char *path,
@@ -33,7 +33,7 @@ void build_subpath(char *subpath, size_t size, const char *path,
 }
 
 int process_directory(const char *path, const struct ast *ast,
-                      const struct opt opt, int eval_print)
+                      struct opt opt)
 {
     DIR *dp;
     struct dirent *dt;
@@ -50,7 +50,8 @@ int process_directory(const char *path, const struct ast *ast,
 
         build_subpath(subpath, sizeof(subpath), path, dt->d_name);
 
-        if (lsdir(subpath, ast, opt, 0, eval_print) != PASS)
+        opt.is_arg = 0;
+        if (lsdir(subpath, ast, opt) != PASS)
             errn = FAIL;
     }
 
@@ -58,8 +59,7 @@ int process_directory(const char *path, const struct ast *ast,
     return errn;
 }
 
-int lsdir(const char *path, const struct ast *ast, const struct opt opt,
-          int is_arg, int eval_print)
+int lsdir(const char *path, const struct ast *ast, struct opt opt)
 {
     struct stat sb;
     int errn = PASS;
@@ -71,17 +71,17 @@ int lsdir(const char *path, const struct ast *ast, const struct opt opt,
     }
 
     if (!opt.d && eval(path, ast) == 1)
-        if (!eval_print)
+        if (!opt.eval_print)
             printf("%s\n", path);
 
-    if (should_process_directory(sb, opt, is_arg))
+    if (should_process_directory(sb, opt))
     {
-        if (process_directory(path, ast, opt, eval_print) != PASS)
+        if (process_directory(path, ast, opt) != PASS)
             errn = FAIL;
     }
 
     if (opt.d && eval(path, ast) == 1)
-        if (!eval_print)
+        if (!opt.eval_print)
             printf("%s\n", path);
 
     return errn;

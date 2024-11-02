@@ -5,6 +5,6 @@
 #include "queue.h"
 #include "options.h"
 
-struct ast *parse(struct queue *queue, int *print, struct opt *opt);
+struct ast *parse(struct queue *queue, struct opt *opt);
 
 #endif /* ! PARSER_H */

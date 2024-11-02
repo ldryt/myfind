@@ -11,7 +11,6 @@ struct assoc_fun
 };
 
 int eval(const char *path, const struct ast *ast);
-int lsdir(const char *path, const struct ast *ast, const struct opt opt,
-          int is_arg, int print);
+int lsdir(const char *path, const struct ast *ast, const struct opt opt);
 
 #endif /* ! EVAL_H */

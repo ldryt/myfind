@@ -43,7 +43,7 @@ int main(int argc, char **argv)
 {
     int errn = PASS;
 
-    struct opt opt = { .d = 0, .H = 0, .L = 0, .P = 1 };
+    struct opt opt = { .d = 0, .H = 0, .L = 0, .P = 1, .is_arg = 1, .eval_print = 0 };
 
     int opt_i = find_options_idx(argc, argv, &opt);
     int expr_i = find_expressions_idx(argc, argv, opt_i);
@@ -51,11 +51,11 @@ int main(int argc, char **argv)
     if (expr_i >= argc)
     {
         if (expr_i == opt_i)
-            return lsdir(".", NULL, opt, 1, 0);
+            return lsdir(".", NULL, opt);
 
         for (int i = opt_i; i < expr_i; ++i)
         {
-            if (lsdir(argv[i], NULL, opt, 1, 0) != PASS)
+            if (lsdir(argv[i], NULL, opt) != PASS)
                 errn = FAIL;
         }
         return errn;
@@ -65,8 +65,7 @@ int main(int argc, char **argv)
     if (!q)
         return FAIL;
 
-    int print = 0;
-    struct ast *ast = parse(q, &print, &opt);
+    struct ast *ast = parse(q, &opt);
     if (!ast)
     {
         queue_destroy(q);
@@ -74,12 +73,12 @@ int main(int argc, char **argv)
     }
 
     if (opt_i >= expr_i)
-        if (lsdir(".", ast, opt, 1, print) != PASS)
+        if (lsdir(".", ast, opt) != PASS)
             errn = FAIL;
 
     for (int i = opt_i; i < expr_i; ++i)
     {
-        if (lsdir(argv[i], ast, opt, 1, print) != PASS)
+        if (lsdir(argv[i], ast, opt) != PASS)
             errn = FAIL;
     }
 
