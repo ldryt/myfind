@@ -32,8 +32,7 @@ void build_subpath(char *subpath, size_t size, const char *path,
              (path[path_len - 1] == '/') ? "" : "/", d_name);
 }
 
-int process_directory(const char *path, const struct ast *ast,
-                      struct opt opt)
+int process_directory(const char *path, const struct ast *ast, struct opt opt)
 {
     DIR *dp;
     struct dirent *dt;

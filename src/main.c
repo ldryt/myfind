@@ -43,7 +43,9 @@ int main(int argc, char **argv)
 {
     int errn = PASS;
 
-    struct opt opt = { .d = 0, .H = 0, .L = 0, .P = 1, .is_arg = 1, .eval_print = 0 };
+    struct opt opt = {
+        .d = 0, .H = 0, .L = 0, .P = 1, .is_arg = 1, .eval_print = 0
+    };
 
     int opt_i = find_options_idx(argc, argv, &opt);
     int expr_i = find_expressions_idx(argc, argv, opt_i);

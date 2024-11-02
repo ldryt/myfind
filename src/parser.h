@@ -2,8 +2,8 @@
 #define PARSER_H
 
 #include "ast.h"
-#include "queue.h"
 #include "options.h"
+#include "queue.h"
 
 struct ast *parse(struct queue *queue, struct opt *opt);
 
