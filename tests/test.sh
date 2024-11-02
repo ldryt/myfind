@@ -83,4 +83,7 @@ test_find * ! -name '????' -o -name '???' -print -a -name 'dir1'
 test_find * ! -name '????' -o -name '???' -print -a -name 'dir1' -print
 test_find * ! -name '????' -o -print -name '???' -print -a -name 'dir1' -print
 
+test_find idonotexist
+test_find -newer idonotexist
+
 echo "All tests passed ٩(^‿^)۶"

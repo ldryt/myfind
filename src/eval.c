@@ -58,6 +58,17 @@ int process_directory(const char *path, const struct ast *ast,
     closedir(dp);
     return errn;
 }
+static int handle_eval(const char *path, const struct ast *ast, struct opt opt)
+{
+    int res = eval(path, ast);
+    if (res == -1)
+        return FAIL;
+
+    if (res && !opt.eval_print)
+        printf("%s\n", path);
+
+    return PASS;
+}
 
 int lsdir(const char *path, const struct ast *ast, struct opt opt)
 {
@@ -70,9 +81,8 @@ int lsdir(const char *path, const struct ast *ast, struct opt opt)
         return FAIL;
     }
 
-    if (!opt.d && eval(path, ast) == 1)
-        if (!opt.eval_print)
-            printf("%s\n", path);
+    if (!opt.d && handle_eval(path, ast, opt) != PASS)
+        errn = FAIL;
 
     if (should_process_directory(sb, opt))
     {
@@ -80,23 +90,43 @@ int lsdir(const char *path, const struct ast *ast, struct opt opt)
             errn = FAIL;
     }
 
-    if (opt.d && eval(path, ast) == 1)
-        if (!opt.eval_print)
-            printf("%s\n", path);
+    if (opt.d && handle_eval(path, ast, opt) != PASS)
+        errn = FAIL;
 
     return errn;
 }
 
 static int eval_or(const char *path, const struct ast *ast)
 {
-    return eval(path, ast->data.children.left)
-        || eval(path, ast->data.children.right);
+    int left = eval(path, ast->data.children.left);
+    if (left == 1)
+        return 1;
+
+    int right = eval(path, ast->data.children.right);
+    if (right == 1)
+        return 1;
+
+    if (left == -1 || right == -1)
+        return -1;
+
+    return 0;
 }
 
 static int eval_and(const char *path, const struct ast *ast)
 {
-    return eval(path, ast->data.children.left)
-        && eval(path, ast->data.children.right);
+    int left = eval(path, ast->data.children.left);
+    if (left == 0)
+        return 0;
+    if (left == -1)
+        return -1;
+
+    int right = eval(path, ast->data.children.right);
+    if (right == -1)
+        return -1;
+    if (right == 0)
+        return 0;
+
+    return 1;
 }
 
 static int eval_print(const char *path,
@@ -122,8 +152,13 @@ static const char *get_name(const char *path)
 
 static int eval_name(const char *path, const struct ast *ast)
 {
-    int res = fnmatch(ast->data.value, get_name(path), 0) == 0;
-    return res;
+    int res = fnmatch(ast->data.value, get_name(path), 0);
+    if (res == 0)
+        return 1;
+    else if (res == FNM_NOMATCH)
+        return 0;
+    else
+        return -1;
 }
 
 static int eval_type(const char *path, const struct ast *ast)
@@ -132,7 +167,7 @@ static int eval_type(const char *path, const struct ast *ast)
     if (lstat(path, &sb))
     {
         warnx("eval_type: cannot stat '%s'", path);
-        return 0;
+        return -1;
     }
 
     switch (ast->data.value[0])
@@ -164,12 +199,12 @@ static int eval_newer(const char *path, const struct ast *ast)
     if (stat(path, &sb1) == -1)
     {
         warnx("eval_newer: cannot stat '%s'", path);
-        return 0;
+        return -1;
     }
     if (stat(ast->data.value, &sb2) == -1)
     {
         warnx("eval_newer: cannot stat '%s'", ast->data.value);
-        return 0;
+        return -1;
     }
 
     if (sb1.st_mtim.tv_sec == sb2.st_mtim.tv_sec)
@@ -186,8 +221,8 @@ static int eval_perm(const char *path, const struct ast *ast)
 
     if (lstat(path, &sb))
     {
-        warnx("eval_type: cannot stat '%s'", path);
-        return 0;
+        warnx("eval_perm: cannot stat '%s'", path);
+        return -1;
     }
 
     path_mode = sb.st_mode & (S_IRWXU | S_IRWXG | S_IRWXO);
@@ -215,19 +250,19 @@ static int eval_user(const char *path, const struct ast *ast)
     if (lstat(path, &sb))
     {
         warnx("eval_user: cannot stat '%s'", path);
-        return 0;
+        return -1;
     }
 
     if (!(path_pwd = getpwuid(sb.st_uid)))
     {
         warnx("eval_user: cannot get passwd struct from '%s'", path);
-        return 0;
+        return -1;
     }
 
     if (!(ast_pwd = getpwnam(ast->data.value)))
     {
-        warnx("eval_type: cannot get passwd struct from '%s'", ast->data.value);
-        return 0;
+        warnx("eval_user: cannot get passwd struct from '%s'", ast->data.value);
+        return -1;
     }
 
     return strcmp(ast_pwd->pw_name, path_pwd->pw_name) == 0;
@@ -241,20 +276,20 @@ static int eval_group(const char *path, const struct ast *ast)
 
     if (lstat(path, &sb))
     {
-        warnx("eval_user: cannot stat '%s'", path);
-        return 0;
+        warnx("eval_group: cannot stat '%s'", path);
+        return -1;
     }
 
     if (!(path_grp = getgrgid(sb.st_gid)))
     {
-        warnx("eval_user: cannot get group struct from '%s'", path);
-        return 0;
+        warnx("eval_group: cannot get group struct from '%s'", path);
+        return -1;
     }
 
     if (!(ast_grp = getgrnam(ast->data.value)))
     {
-        warnx("eval_type: cannot get group struct from '%s'", ast->data.value);
-        return 0;
+        warnx("eval_group: cannot get group struct from '%s'", ast->data.value);
+        return -1;
     }
 
     return strcmp(ast_grp->gr_name, path_grp->gr_name) == 0;
@@ -262,7 +297,10 @@ static int eval_group(const char *path, const struct ast *ast)
 
 static int eval_not(const char *path, const struct ast *ast)
 {
-    return !eval(path, ast->data.children.right);
+    int res = eval(path, ast->data.children.right);
+    if (res == -1)
+        return -1;
+    return !res;
 }
 
 static int eval_delete(const char *path,
@@ -271,7 +309,7 @@ static int eval_delete(const char *path,
     if (remove(path) == -1)
     {
         warn("eval_delete: unable to remove %s", path);
-        return 0;
+        return -1;
     }
     return 1;
 }
@@ -300,5 +338,5 @@ int eval(const char *path, const struct ast *ast)
             return alist_fun[i].fun(path, ast);
 
     warnx("eval: Invalid type '%d'", ast->type);
-    return 0;
+    return -1;
 }
