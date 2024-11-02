@@ -18,6 +18,7 @@ enum type
     NOT = OPDELIM,
 
     // Actions
+    DELETE,
     PRINT = ACTDELIM,
 
     // Tests

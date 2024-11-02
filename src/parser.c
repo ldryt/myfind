@@ -87,7 +87,7 @@ static int is_valid_value_perm(const char *value)
     }
 }
 
-static int is_valid_value(const char *value, enum type type)
+static int is_valid_value(const char *value, enum type type, struct opt *opt, int *print)
 {
     switch (type)
     {
@@ -95,6 +95,10 @@ static int is_valid_value(const char *value, enum type type)
         return is_valid_value_type(value);
     case PERM:
         return is_valid_value_perm(value);
+    case DELETE:
+        *print = 1;
+        opt->d = 1;
+        return 1;
     default:
         return 1;
     }
@@ -190,7 +194,7 @@ static void handle_print(struct ast *elm, int *print)
     }
 }
 
-struct ast *parse(struct queue *queue, int *print)
+struct ast *parse(struct queue *queue, int *print, struct opt *opt)
 {
     struct ast *elm;
     int was_cmd = 0;
@@ -205,7 +209,7 @@ struct ast *parse(struct queue *queue, int *print)
 
     while ((elm = queue_pop(queue)))
     {
-        if (!is_valid_value(elm->data.value, elm->type))
+        if (!is_valid_value(elm->data.value, elm->type, opt, print))
             return abort_parsing(elm, &cmd_stack, &op_stack, "Invalid value");
 
         handle_print(elm, print);

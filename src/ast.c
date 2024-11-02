@@ -7,12 +7,13 @@
 #include "errn.h"
 
 struct assoc_name alist_name[] = {
-    { .type = AND, .name = "-a" },       { .type = OR, .name = "-o" },
-    { .type = PRINT, .name = "-print" }, { .type = NAME, .name = "-name" },
-    { .type = TYPE, .name = "-type" },   { .type = NEWER, .name = "-newer" },
-    { .type = PERM, .name = "-perm" },   { .type = USER, .name = "-user" },
-    { .type = GROUP, .name = "-group" }, { .type = NOT, .name = "!" },
-    { .type = LPAR, .name = "(" },       { .type = RPAR, .name = ")" },
+    { .type = AND, .name = "-a" },         { .type = OR, .name = "-o" },
+    { .type = PRINT, .name = "-print" },   { .type = NAME, .name = "-name" },
+    { .type = TYPE, .name = "-type" },     { .type = NEWER, .name = "-newer" },
+    { .type = PERM, .name = "-perm" },     { .type = USER, .name = "-user" },
+    { .type = GROUP, .name = "-group" },   { .type = NOT, .name = "!" },
+    { .type = LPAR, .name = "(" },         { .type = RPAR, .name = ")" },
+    { .type = DELETE, .name = "-delete" },
 };
 
 struct ast *ast_init(const char *name)

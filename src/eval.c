@@ -265,12 +265,29 @@ static int eval_not(const char *path, const struct ast *ast)
     return !eval(path, ast->data.children.right);
 }
 
+static int eval_delete(const char *path,
+                       __attribute__((unused)) const struct ast *ast)
+{
+    if (remove(path) == -1)
+    {
+        warn("eval_delete: unable to remove %s", path);
+        return 0;
+    }
+    return 1;
+}
+
 struct assoc_fun alist_fun[] = {
-    { .type = AND, .fun = eval_and },     { .type = OR, .fun = eval_or },
-    { .type = PRINT, .fun = eval_print }, { .type = NAME, .fun = eval_name },
-    { .type = TYPE, .fun = eval_type },   { .type = NEWER, .fun = eval_newer },
-    { .type = PERM, .fun = eval_perm },   { .type = USER, .fun = eval_user },
-    { .type = GROUP, .fun = eval_group }, { .type = NOT, .fun = eval_not },
+    { .type = AND, .fun = eval_and },
+    { .type = OR, .fun = eval_or },
+    { .type = PRINT, .fun = eval_print },
+    { .type = NAME, .fun = eval_name },
+    { .type = TYPE, .fun = eval_type },
+    { .type = NEWER, .fun = eval_newer },
+    { .type = PERM, .fun = eval_perm },
+    { .type = USER, .fun = eval_user },
+    { .type = GROUP, .fun = eval_group },
+    { .type = NOT, .fun = eval_not },
+    { .type = DELETE, .fun = eval_delete },
 };
 
 int eval(const char *path, const struct ast *ast)

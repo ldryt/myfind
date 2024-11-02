@@ -66,7 +66,7 @@ int main(int argc, char **argv)
         return FAIL;
 
     int print = 0;
-    struct ast *ast = parse(q, &print);
+    struct ast *ast = parse(q, &print, &opt);
     if (!ast)
     {
         queue_destroy(q);
