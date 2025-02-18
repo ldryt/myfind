@@ -187,10 +187,20 @@ static int process_remaining_operators(struct stack **cmd_stack,
 
 static void handle_print(struct ast *elm, struct opt *opt)
 {
-    if (!(opt->eval_print) && elm->type == PRINT)
-    {
-        opt->eval_print = 1;
+    if (!(opt->eval_print))
         return;
+
+    switch (elm->type)
+    {
+    case PRINT:
+    /* FALLTHROUGH */
+    case DELETE:
+    /* FALLTHROUGH */
+    case EXEC:
+        opt->eval_print = 1;
+        break;
+    default:
+        break;
     }
 }
 

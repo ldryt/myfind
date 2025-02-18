@@ -13,7 +13,7 @@ struct assoc_name alist_name[] = {
     { .type = PERM, .name = "-perm" },     { .type = USER, .name = "-user" },
     { .type = GROUP, .name = "-group" },   { .type = NOT, .name = "!" },
     { .type = LPAR, .name = "(" },         { .type = RPAR, .name = ")" },
-    { .type = DELETE, .name = "-delete" },
+    { .type = DELETE, .name = "-delete" }, { .type = EXEC, .name = "-exec" },
 };
 
 struct ast *ast_init(const char *name)
@@ -21,7 +21,7 @@ struct ast *ast_init(const char *name)
     struct ast *ast = malloc(sizeof(struct ast));
     if (!ast)
     {
-        warn("ast_init: Memory failure");
+        warn("ast_init: unable to allocate ast structure");
         return NULL;
     }
 
@@ -38,9 +38,16 @@ struct ast *ast_init(const char *name)
         }
     }
 
-    warnx("ast_init: Invalid name '%s'", name);
+    warnx("ast_init: not a valid name: '%s'", name);
     free(ast);
     return NULL;
+}
+
+void cleanup_argv(char **argv, size_t argc)
+{
+    for (size_t i = 0; i < argc; i++)
+        free(argv[i]);
+    free(argv);
 }
 
 void ast_destroy(struct ast *ast)
@@ -53,7 +60,14 @@ void ast_destroy(struct ast *ast)
         ast_destroy(ast->data.children.right);
         ast_destroy(ast->data.children.left);
     }
-
+    else if (is_action(ast))
+    {
+        if (ast->type == EXEC && ast->data.exec)
+        {
+            cleanup_argv(ast->data.exec->argv, ast->data.exec->argc);
+            free(ast->data.exec);
+        }
+    }
     free(ast);
 }
 

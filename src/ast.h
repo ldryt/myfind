@@ -1,6 +1,8 @@
 #ifndef AST_H
 #define AST_H
 
+#include <stddef.h>
+
 #define OPDELIM 100
 #define ACTDELIM 200
 
@@ -19,6 +21,7 @@ enum type
 
     // Actions
     DELETE,
+    EXEC,
     PRINT = ACTDELIM,
 
     // Tests
@@ -28,6 +31,13 @@ enum type
     PERM,
     USER,
     GROUP,
+};
+
+struct exec_info
+{
+    char **argv;
+    size_t argc;
+    char end;
 };
 
 struct ast
@@ -41,6 +51,7 @@ struct ast
             struct ast *right;
         } children;
         char *value;
+        struct exec_info *exec;
     } data;
 };
 
@@ -52,6 +63,7 @@ struct assoc_name
 
 struct ast *ast_init(const char *name);
 void ast_destroy(struct ast *ast);
+void cleanup_argv(char **argv, size_t argc);
 
 int is_operator(const struct ast *ast);
 int is_action(const struct ast *ast);

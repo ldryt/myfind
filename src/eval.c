@@ -13,6 +13,8 @@
 #include <string.h>
 #include <sys/stat.h>
 #include <sys/types.h>
+#include <sys/wait.h>
+#include <unistd.h>
 
 #include "ast.h"
 #include "errn.h"
@@ -63,7 +65,7 @@ static int handle_eval(const char *path, const struct ast *ast, struct opt opt)
     if (res == -1)
         return FAIL;
 
-    if (res && !opt.eval_print)
+    if (res == 1 && !opt.eval_print)
         printf("%s\n", path);
 
     return PASS;
@@ -95,44 +97,47 @@ int lsdir(const char *path, const struct ast *ast, struct opt opt)
     return errn;
 }
 
+/* -1 => error
+ *  0 => false
+ *  1 => true
+ *  2 => true but do not print again
+ */
+static int eval_and(const char *path, const struct ast *ast)
+{
+    int left = eval(path, ast->data.children.left);
+    if (left < 1)
+        return left;
+
+    return eval(path, ast->data.children.right);
+}
+
 static int eval_or(const char *path, const struct ast *ast)
 {
     int left = eval(path, ast->data.children.left);
-    if (left == 1)
-        return 1;
+    if (left != 0)
+        return left;
 
     int right = eval(path, ast->data.children.right);
-    if (right == 1)
-        return 1;
-
-    if (left == -1 || right == -1)
-        return -1;
+    if (right != 0)
+        return right;
 
     return 0;
 }
 
-static int eval_and(const char *path, const struct ast *ast)
+static int eval_not(const char *path, const struct ast *ast)
 {
-    int left = eval(path, ast->data.children.left);
-    if (left == 0)
-        return 0;
-    if (left == -1)
+    int res = eval(path, ast->data.children.right);
+    if (res == -1)
         return -1;
 
-    int right = eval(path, ast->data.children.right);
-    if (right == -1)
-        return -1;
-    if (right == 0)
-        return 0;
-
-    return 1;
+    return res == 0 ? 1 : 0;
 }
 
 static int eval_print(const char *path,
                       __attribute__((unused)) const struct ast *ast)
 {
     printf("%s\n", path);
-    return 1;
+    return 2;
 }
 
 static const char *get_name(const char *path)
@@ -294,14 +299,6 @@ static int eval_group(const char *path, const struct ast *ast)
     return strcmp(ast_grp->gr_name, path_grp->gr_name) == 0;
 }
 
-static int eval_not(const char *path, const struct ast *ast)
-{
-    int res = eval(path, ast->data.children.right);
-    if (res == -1)
-        return -1;
-    return !res;
-}
-
 static int eval_delete(const char *path,
                        __attribute__((unused)) const struct ast *ast)
 {
@@ -311,6 +308,89 @@ static int eval_delete(const char *path,
         return -1;
     }
     return 1;
+}
+
+static int eval_exec(const char *path, const struct ast *ast)
+{
+    if (ast->data.exec->end == '+')
+    {
+        warnx("eval_exec: '+' terminator not supported");
+        return -1;
+    }
+
+    size_t path_len = strlen(path);
+    char **argv = calloc(ast->data.exec->argc + 1, sizeof(char *));
+    if (!argv)
+        return -1;
+
+    for (size_t i = 0; i < ast->data.exec->argc; i++)
+    {
+        const char *arg = ast->data.exec->argv[i];
+        size_t len = strlen(arg);
+        size_t nlen = len;
+
+        for (size_t j = 0; j < len - 1; j++)
+        {
+            if (arg[j] == '{' && arg[j + 1] == '}')
+                nlen += path_len - 2;
+        }
+
+        char *rep = malloc(nlen + 1);
+        if (!rep)
+        {
+            warn("eval_exec: error allocating arg");
+            cleanup_argv(argv, i);
+            return -1;
+        }
+
+        size_t k = 0;
+        for (size_t j = 0; j < len; j++)
+        {
+            if (arg[j] == '{' && arg[j + 1] == '}')
+            {
+                strcpy(&rep[k], path);
+                k += path_len;
+                j++;
+            }
+            else
+            {
+                rep[k++] = arg[j];
+            }
+        }
+        rep[k] = 0;
+        argv[i] = rep;
+    }
+
+    int exit_status;
+    pid_t pid = fork();
+    switch (pid)
+    {
+    case -1:
+        warn("eval_exec: fork");
+        cleanup_argv(argv, ast->data.exec->argc);
+        return -1;
+    case 0:
+        execvp(argv[0], argv);
+        err(EXIT_FAILURE, "eval_exec: an error occured while executing '%s'",
+            ast->data.exec->argv[0]);
+    default:
+        if (waitpid(pid, &exit_status, 0) == -1)
+        {
+            warn("eval_exec: waitpid failed");
+            cleanup_argv(argv, ast->data.exec->argc);
+            return -1;
+        }
+        if (!WIFEXITED(exit_status))
+        {
+            warnx("eval_exec: child process did not terminate normally");
+            cleanup_argv(argv, ast->data.exec->argc);
+            return -1;
+        }
+        break;
+    }
+
+    cleanup_argv(argv, ast->data.exec->argc);
+    return exit_status == 0 ? 2 : -1;
 }
 
 struct assoc_fun alist_fun[] = {
@@ -325,6 +405,7 @@ struct assoc_fun alist_fun[] = {
     { .type = GROUP, .fun = eval_group },
     { .type = NOT, .fun = eval_not },
     { .type = DELETE, .fun = eval_delete },
+    { .type = EXEC, .fun = eval_exec },
 };
 
 int eval(const char *path, const struct ast *ast)
@@ -336,6 +417,6 @@ int eval(const char *path, const struct ast *ast)
         if (ast->type == alist_fun[i].type)
             return alist_fun[i].fun(path, ast);
 
-    warnx("eval: Invalid type '%d'", ast->type);
+    warnx("eval: invalid type '%d'", ast->type);
     return -1;
 }

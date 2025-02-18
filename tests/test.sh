@@ -86,4 +86,24 @@ test_find * ! -name '????' -o -print -name '???' -print -a -name 'dir1' -print
 test_find idonotexist
 test_find -newer idonotexist
 
+test_find . -type f -exec echo File: {} \;
+test_find . -type f -exec echo File:{} \;
+test_find . -type d -exec echo Directory: {} \;
+test_find . -type d -exec echo Directory:{} \;
+test_find . -type d -exec echo Directory: {}\;
+test_find . -type l -exec echo Symlink: {} \;
+test_find . -type f -exec cat {} \;
+test_find . -type f -exec ls -l {} \;
+test_find . -name "*.txt" -exec echo Processing {} \;
+test_find . -perm 644 -exec chmod 600 {} \; -print
+test_find . -perm 755 -exec chmod 700 {} \; -print
+
+test_find . -exec echo {} {}w{}{}}{{} \;
+test_find . -exec echo {} {}w{{}}{} \;
+test_find . -exec echo {} }w}{}}{{} \;
+
+test_find . -exec echo {} \; -exec echo Again: {} \;
+test_find . -exec echo First: {} \; -exec echo Second: {} \;
+test_find . -type f -exec echo File: {} \; -o -type d -exec echo Dir: {} \;
+
 echo "All tests passed ٩(^‿^)۶"
